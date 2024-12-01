@@ -5,7 +5,7 @@
 #############################################
 
 # Default values for folder and file names
-BIN_DIR="$HOME/bin"
+BIN_DIR="$HOME/ESP32_pi/bin"
 ESP32_URL="https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json"
 PORT="/dev/ttyUSB0"
 
@@ -20,7 +20,7 @@ if ! command -v arduino-cli &> /dev/null; then
         echo "Error installing Arduino CLI. Exiting."
         exit 1
     fi
-    export PATH=$PATH:$BIN_DIR
+    
 fi
 
 # Check if ESP32 core is installed
@@ -103,24 +103,23 @@ if [[ "$COMPILE1" == "y" ]]; then
 fi
 
 # Ensure output directory exists and has correct permissions
-if [ ! -d "$OUTPUT_DIR" ]; then
-  echo "Creating output directory: $OUTPUT_DIR"
-  mkdir -p "$OUTPUT_DIR"
-  chown pi:pi "$OUTPUT_DIR"
-  chmod 755 "$OUTPUT_DIR"
-else
-  echo "Output directory already exists: $OUTPUT_DIR"
-fi
+#if [ ! -d "$OUTPUT_DIR" ]; then
+#  echo "Creating output directory: $OUTPUT_DIR"
+#  mkdir -p "$OUTPUT_DIR"
+#  chown pi:pi "$OUTPUT_DIR"
+#  chmod 755 "$OUTPUT_DIR"
+#else
+#  echo "Output directory already exists: $OUTPUT_DIR"
+#fi
 
 if [[ "$COMPILE" == "y" ]]; then
     echo "Compiling the sketch from $SKETCH_FILE..."
     # Create an output directory for compiled files    
     # Use the --output-dir flag to specify the output directory
-    if ! arduino-cli compile --fqbn esp32:esp32:esp32 --output-dir "$OUTPUT_DIR" "$SKETCH_NAME"; then
+    if ! arduino-cli compile --fqbn esp32:esp32:esp32 "$SKETCH_NAME"; then
         echo "Error compiling the sketch. Exiting."
         exit 1
     fi
-    echo "Compilation successful. Compiled files are in $OUTPUT_DIR."
 fi
 
 # Check if the ESP32 is connected and upload the sketch (only if UPLOAD_BIN is passed)
