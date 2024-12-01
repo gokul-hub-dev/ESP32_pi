@@ -23,6 +23,68 @@ if ! command -v arduino-cli &> /dev/null; then
     
 fi
 
+ASYNC_TCP="n"
+ESP_ASYNC_WEB_SERVER="n"
+ASYNC_ELEGANT_OTA="n"
+
+if [[ "$ASYNC_TCP" == "y" ]]; then
+  echo "Searching for AsyncTCP library..."
+  if arduino-cli lib search AsyncTCP; then
+    echo "Library found. Proceeding to installation..."
+  else
+    echo "Failed to search for AsyncTCP library. Check your internet connection or Arduino CLI installation."
+    exit 1
+  fi
+  echo "Installing AsyncTCP library..."
+  if arduino-cli lib install "AsyncTCP"; then
+      echo "AsyncTCP library installed successfully."
+  else
+      echo "Failed to install AsyncTCP library."
+      exit 1
+  fi
+  # List all installed libraries
+  echo "Listing installed libraries..."
+  arduino-cli lib list  
+fi
+if [[ "$ESP_ASYNC_WEB_SERVER" == "y" ]]; then
+  echo "Searching for ESPAsyncWebServer library..."
+  if arduino-cli lib search ESPAsyncWebServer; then
+    echo "Library found. Proceeding to installation..."
+  else
+    echo "Failed to search for ESPAsyncWebServer library."
+    exit 1
+  fi
+  echo "Installing ESPAsyncWebServer library..."
+  if arduino-cli lib install "ESPAsyncWebServer"; then
+      echo "ESPAsyncWebServer library installed successfully."
+  else
+      echo "Failed to install ESPAsyncWebServer library."
+      exit 1
+  fi
+  # List all installed libraries
+  echo "Listing installed libraries..."
+  arduino-cli lib list  
+fi
+if [[ "$ASYNC_ELEGANT_OTA" == "y" ]]; then
+  echo "Searching for AsyncElegantOTA library..."
+  if arduino-cli lib search AsyncElegantOTA; then
+    echo "Library found. Proceeding to installation..."
+  else
+    echo "Failed to search for AsyncElegantOTA library."
+    exit 1
+  fi
+  echo "Installing AsyncElegantOTA library..."
+  if arduino-cli lib install "AsyncElegantOTA"; then
+      echo "AsyncElegantOTA library installed successfully."
+  else
+      echo "Failed to install AsyncElegantOTA library."
+      exit 1
+  fi
+  # List all installed libraries
+  echo "Listing installed libraries..."
+  arduino-cli lib list  
+fi
+
 # Check if ESP32 core is installed
 if ! arduino-cli core list | grep -q "esp32:esp32"; then
     echo "Configuring ESP32 support..."
@@ -145,4 +207,4 @@ if [[ "$SERIAL_MONITOR" == "y" ]]; then
   fi
 fi
 
-echo "ESP32 setup and upload complete!"
+echo "ESP32 Finished..........."
