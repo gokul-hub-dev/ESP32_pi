@@ -164,21 +164,81 @@ void SERVER_OTA_CORE( void * pvParameters ){
   }
 }
 
-//Task2code: blinks an LED every 700 ms
-void Task2code( void * pvParameters ){
-  Serial.print("Task2 running on core ");
-  Serial.println(xPortGetCoreID());
+/*************************RELAY_CORE1**********************************/
+#include <EEPROM.h>
+#define EEPROM_SIZE 1
+const int RelayPin = 25;    // the number of the pushbutton pin
+void RELAY_CORE1( void * pvParameters ){
+  EEPROM.begin(EEPROM_SIZE);
+  pinMode(RelayPin, INPUT_PULLUP);
 
   for(;;){
-    Serial.println("Core2 running....!!!");
-    delay(1000);
+    if (0 == EEPROM.read(0))
+    {
+      Serial.println("Waiting for relay triggering......");
+      while(digitalRead(RelayPin));
+      EEPROM.write(0,1);
+      EEPROM.commit();
+      Serial.println("EEPROM set successfully");
+    }
+    else if(1 == EEPROM.read(0))
+    {
+      delay(2000);
+      EEPROM.write(0,0);
+      EEPROM.commit(); 
+      Serial.println("EEPROM reset Successfully");
+    }
   }
 }
+/*********************************************************************/
+/*********************************BUZZER_CORE*************************/
+#include "pitches.h"
+#include "esp32-hal-timer.h"
+
+#define BUZZZER_PIN  26
+#define ISR_STOP_BUZZER_PIN  27
+
+volatile bool TimerStopBuzzer;
+volatile bool isrStopBuzzer;
+
+int melody[] = {
+  NOTE_C4, NOTE_G3, NOTE_G3, NOTE_A3, NOTE_G3, 0, NOTE_B3, NOTE_C4
+};
+int noteDurations[] = {
+  4, 8, 8, 4, 4, 4, 4, 4
+};
+
+/* Interrupt Service Routine */
+void IRAM_ATTR isr() {
+  isrStopBuzzer = false;
+}
+
+/* Timer Interrupt */
+hw_timer_t *timer = NULL;
+void IRAM_ATTR onTimer() {
+  TimerStopBuzzer = false;
+}
+/*********************************************************************/
 
 void setup() {
   Serial.begin(115200); 
   delay(5000);
-  Serial.println("Going to start");
+/*********************************BUZZER_CORE*************************/  
+  pinMode(ISR_STOP_BUZZER_PIN, INPUT_PULLUP);  // Set ISR pin as input
+  attachInterrupt(ISR_STOP_BUZZER_PIN, isr, FALLING); // Attach ISR to the pin
+  Serial.println("Interupt finished");
+  TimerStopBuzzer = true;
+  isrStopBuzzer = true;
+  // Create hardware timer
+  timer = timerBegin(1000000);                           // Timer frequency
+  timerAttachInterrupt(timer, &onTimer);                // Attach interrupt
+  /*
+  1000000 = 1sec
+  10000000 = 10sec
+  300000000 = 60sec
+  */
+  timerAlarm(timer, 300000000, true, 0);                  // Match value, auto-reload, continuous  
+/*********************************************************************/
     // Connect to WiFi network
   WiFi.begin(ssid, password);
   Serial.println("");
@@ -204,9 +264,9 @@ void setup() {
                     0);          /* pin task to core 0 */                  
   delay(500); 
 
-  //create a task that will be executed in the Task2code() function, with priority 1 and executed on core 1
+  //create a task that will be executed in the RELAY_CORE1() function, with priority 1 and executed on core 1
   xTaskCreatePinnedToCore(
-                    Task2code,   /* Task function. */
+                    RELAY_CORE1,   /* Task function. */
                     "Task2",     /* name of task. */
                     10000,       /* Stack size of task */
                     NULL,        /* parameter of the task */
@@ -214,9 +274,21 @@ void setup() {
                     &Task2,      /* Task handle to keep track of created task */
                     1);          /* pin task to core 1 */
     delay(500); 
+
 }
 
 void loop() {
-  
-}
+/*************BUZZER_CORE1************/
+  if (TimerStopBuzzer == true && isrStopBuzzer == true) {
+    Serial.println("Starting buzzer...........");
+    for (int thisNote = 0; thisNote < 8; thisNote++) {
+      int noteDuration = 1000 / noteDurations[thisNote];
+      tone(BUZZZER_PIN, melody[thisNote], noteDuration);
 
+      int pauseBetweenNotes = noteDuration * 1.30;
+      delay(pauseBetweenNotes);
+      noTone(BUZZZER_PIN);
+    }
+  }
+/************************************/
+}
